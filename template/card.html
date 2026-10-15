@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1080">
+<style>
+  @font-face {
+    font-family: "Pretendard Variable";
+    font-weight: 45 920;
+    font-style: normal;
+    src: url("fonts/PretendardVariable.woff2") format("woff2-variations");
+  }
+  :root {
+    --paper: #FFF4E2;
+    --ink: #1F1A16;
+    --muted: #6E6156;
+    --line: #1F1A16;
+    --accent: #FF5A36;
+    --accent-soft: #FFD8C9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Pretendard Variable", Pretendard, "Noto Sans CJK KR", "Noto Sans KR", sans-serif;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    position: relative;
+    width: 1080px; height: 1350px;
+    padding: 84px 84px 0 84px;
+    display: flex; flex-direction: column;
+  }
+  /* 종이 결 느낌의 점 패턴 */
+  .card::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(31,26,22,.07) 1.6px, transparent 1.8px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+  .top {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 30px; font-weight: 700;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 14px;
+    padding: 14px 26px 14px 22px;
+    border: 4px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 6px 6px 0 var(--line);
+  }
+  .chip i {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--line);
+  }
+  .date { color: var(--muted); letter-spacing: .02em; }
+
+  .main { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  /* 표지 */
+  .cover .main { justify-content: center; padding-bottom: 380px; }
+  .kicker {
+    font-size: 40px; font-weight: 800; color: var(--accent);
+    margin-bottom: 30px;
+  }
+  .headline {
+    font-size: 104px; line-height: 1.16; font-weight: 900;
+    letter-spacing: -0.035em;
+  }
+  .sub {
+    margin-top: 44px;
+    font-size: 42px; line-height: 1.5; font-weight: 600; color: var(--muted);
+    letter-spacing: -0.01em;
+  }
+  mark {
+    color: inherit;
+    background: linear-gradient(transparent 58%, var(--accent-soft) 58%, var(--accent-soft) 92%, transparent 92%);
+    padding: 0 .06em;
+  }
+
+  /* 본문 */
+  .body .main { padding-top: 72px; padding-bottom: 380px; }
+  .num {
+    font-size: 34px; font-weight: 900; color: var(--accent);
+    letter-spacing: .04em; margin-bottom: 22px;
+  }
+  .heading {
+    font-size: 72px; line-height: 1.22; font-weight: 900; letter-spacing: -0.03em;
+    padding-bottom: 40px; margin-bottom: 44px;
+    border-bottom: 5px solid var(--line);
+  }
+  .text {
+    font-size: 44px; line-height: 1.62; font-weight: 500; letter-spacing: -0.015em;
+  }
+  .text p + p { margin-top: 30px; }
+  .text b { font-weight: 800; }
+
+  /* 하단 */
+  .foot {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 250px;
+    border-top: 5px solid var(--line);
+    background: var(--accent);
+    display: flex; align-items: center;
+    padding: 0 84px;
+    z-index: 2;
+  }
+  .foot .who { color: #fff; }
+  .foot .handle { font-size: 40px; font-weight: 900; letter-spacing: -0.01em; }
+  .foot .src { margin-top: 8px; font-size: 26px; font-weight: 600; opacity: .9; max-width: 560px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .foot .page {
+    margin-left: auto;
+    font-size: 30px; font-weight: 800; color: #fff;
+    border: 4px solid #fff; border-radius: 999px; padding: 6px 20px;
+  }
+  .cat {
+    position: absolute; right: 64px; bottom: 236px;
+    width: 300px; height: 300px; z-index: 1;
+  }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+  // render.py가 이 줄을 실제 데이터로 바꿔 넣습니다.
+  const DATA = /*__DATA__*/{"category":"IT·신제품","date":"10.15","slideIndex":0,"total":2,"handle":"@wadada_cat","sources":["예시 출처"],"slides":[{"kicker":"와다다가 물어왔다냥","headline":"이건 예시 **헤드라인**입니다","sub":"한두 줄짜리 부제가 들어가는 자리"},{"heading":"본문 제목","body":"본문 문단입니다."}]}/*__END__*/;
+
+  const ACCENTS = {
+    "밈·화제":   ["#FF5A36", "#FFD3C4"],
+    "생활정보":  ["#1E9E62", "#C6EFD9"],
+    "IT·신제품": ["#3561F0", "#CCD9FF"],
+    "연예":      ["#E0408F", "#FAD0E5"],
+    "스포츠":    ["#E89B00", "#FFE7A8"],
+  };
+
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  // **강조** → 형광펜, 줄바꿈 유지
+  const fmt = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<mark>$1</mark>").replace(/\n/g, "<br>");
+  const fmtBody = s => esc(s).split(/\n{2,}/).map(p => "<p>" + p.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>") + "</p>").join("");
+
+  const CAT_SVG = `
+  <svg class="cat" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#1F1A16" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+      <!-- 귀 -->
+      <path d="M62 132 L74 40 L132 96 Z" fill="#F6B26B"/>
+      <path d="M238 132 L226 40 L168 96 Z" fill="#F6B26B"/>
+      <path d="M80 112 L86 66 L116 96 Z" fill="#FFB7A8" stroke-width="0"/>
+      <path d="M220 112 L214 66 L184 96 Z" fill="#FFB7A8" stroke-width="0"/>
+      <!-- 머리 -->
+      <path d="M40 210 C40 130 90 92 150 92 C210 92 260 130 260 210 L260 300 L40 300 Z" fill="#F6B26B"/>
+      <!-- 줄무늬 -->
+      <path d="M150 96 L150 128 M124 100 L130 124 M176 100 L170 124" fill="none"/>
+      <!-- 눈 -->
+      <ellipse cx="108" cy="176" rx="15" ry="19" fill="#1F1A16"/>
+      <ellipse cx="192" cy="176" rx="15" ry="19" fill="#1F1A16"/>
+      <circle cx="113" cy="169" r="5" fill="#fff" stroke-width="0"/>
+      <circle cx="197" cy="169" r="5" fill="#fff" stroke-width="0"/>
+      <!-- 코·입 -->
+      <path d="M142 204 L158 204 L150 213 Z" fill="#FF8A80"/>
+      <path d="M150 213 C150 224 138 228 130 222 M150 213 C150 224 162 228 170 222" fill="none"/>
+      <!-- 수염 -->
+      <path d="M86 210 L44 202 M86 222 L46 228 M214 210 L256 202 M214 222 L254 228" fill="none" stroke-width="5"/>
+      <!-- 물고 온 신문 -->
+      <g transform="rotate(-10 150 246)">
+        <rect x="96" y="226" width="108" height="64" rx="6" fill="#fff"/>
+        <path d="M110 244 L190 244 M110 258 L176 258 M110 272 L184 272" fill="none" stroke-width="5"/>
+      </g>
+    </g>
+  </svg>`;
+
+  function render() {
+    const d = DATA;
+    const [accent, soft] = ACCENTS[d.category] || ACCENTS["밈·화제"];
+    document.documentElement.style.setProperty("--accent", accent);
+    document.documentElement.style.setProperty("--accent-soft", soft);
+
+    const s = d.slides[d.slideIndex];
+    const isCover = d.slideIndex === 0;
+    const src = (d.sources || []).length ? "출처 · " + d.sources.join(", ") : "";
+    const pageTag = d.total <= 1 ? ""
+      : isCover ? `<div class="page">넘겨보라냥 →</div>`
+      : `<div class="page">${d.slideIndex + 1} / ${d.total}</div>`;
+
+    const main = isCover
+      ? `<div class="main">
+           ${s.kicker ? `<div class="kicker">${fmt(s.kicker)}</div>` : ""}
+           <div class="headline fit">${fmt(s.headline)}</div>
+           ${s.sub ? `<div class="sub">${fmt(s.sub)}</div>` : ""}
+         </div>`
+      : `<div class="main">
+           <div class="num">${String(d.slideIndex).padStart(2, "0")}</div>
+           <div class="heading fit">${fmt(s.heading)}</div>
+           <div class="text fit">${fmtBody(s.body)}</div>
+         </div>`;
+
+    document.getElementById("root").innerHTML = `
+      <div class="card ${isCover ? "cover" : "body"}">
+        <div class="top">
+          <div class="chip"><i></i>${esc(d.category)}</div>
+          <div class="date">${esc(d.date)}</div>
+        </div>
+        ${main}
+        <div class="foot">
+          <div class="who">
+            <div class="handle">${esc(d.handle)}</div>
+            ${src ? `<div class="src">${esc(src)}</div>` : ""}
+          </div>
+          ${pageTag}
+        </div>
+        ${CAT_SVG}
+      </div>`;
+  }
+
+  // 글이 길면 글자 크기를 줄여서 영역 안에 맞춤
+  function fitAll() {
+    const main = document.querySelector(".main");
+    const fits = [...document.querySelectorAll(".fit")];
+    for (let i = 0; i < 40 && main.scrollHeight > main.clientHeight + 1; i++) {
+      fits.forEach(el => {
+        const size = parseFloat(getComputedStyle(el).fontSize);
+        el.style.fontSize = (size * 0.95) + "px";
+      });
+    }
+  }
+
+  render();
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => {
+    fitAll();
+    document.body.setAttribute("data-ready", "1");
+  });
+</script>
+</body>
+</html>

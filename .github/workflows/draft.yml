@@ -1,0 +1,100 @@
+# 루틴이 claude/posts-* 브랜치에 원고를 올리면:
+# 형식 검사 → 카드 이미지 렌더링 → 브랜치에 커밋 → "승인 대기" PR 생성/갱신
+name: 초안 미리보기
+
+on:
+  push:
+    branches: ["claude/posts-*"]
+    paths: ["posts/**/post.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: draft-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 렌더링 도구 설치
+        run: |
+          pip install playwright pillow
+          python -m playwright install --with-deps chromium
+
+      - name: 바뀐 게시물 찾기
+        id: changed
+        run: |
+          dirs=$(git diff --name-only origin/main...HEAD -- 'posts/**/post.json' | xargs -r -n1 dirname | sort -u | tr '\n' ' ')
+          echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
+          echo "대상: $dirs"
+
+      - name: 형식 검사
+        if: steps.changed.outputs.dirs != ''
+        run: python scripts/validate.py ${{ steps.changed.outputs.dirs }}
+
+      - name: 카드 렌더링
+        if: steps.changed.outputs.dirs != ''
+        run: python scripts/render.py ${{ steps.changed.outputs.dirs }}
+
+      - name: 이미지 커밋
+        if: steps.changed.outputs.dirs != ''
+        run: |
+          git config user.name "wadada-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add posts
+          git diff --cached --quiet || git commit -m "카드 이미지 렌더링"
+          git push
+
+      - name: 승인 대기 PR 만들기
+        if: steps.changed.outputs.dirs != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          day=${BRANCH#claude/posts-}
+          python - "$sha" "$day" > pr_body.md <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          sha, day = sys.argv[1], sys.argv[2]
+          repo = os.environ["GITHUB_REPOSITORY"]
+          hours = {1: "13:00", 2: "14:00", 3: "15:00"}
+          print(f"## {day} 와다다 게시 대기\n")
+          print("**Merge = 승인**이에요. 승인된 카드는 정해진 시간에 자동으로 올라가요.")
+          print("특정 카드만 빼고 싶으면 그 폴더에 `skip` 이라는 빈 파일을 추가한 뒤 Merge 하세요.\n")
+          for d in sorted(Path("posts", day).iterdir(), key=lambda p: p.name):
+              pj = d / "post.json"
+              if not pj.exists():
+                  continue
+              p = json.loads(pj.read_text(encoding="utf-8"))
+              print(f"---\n### {d.name}번 · {hours.get(int(d.name), '')} · {p.get('category')} · {p.get('topic')}\n")
+              imgs = sorted(d.glob("slide-*.jpg"), key=lambda f: f.name)
+              print(" ".join(f'<img src="https://raw.githubusercontent.com/{repo}/{sha}/{f.as_posix()}" width="260">' for f in imgs))
+              print("\n**캡션**\n")
+              print("> " + p.get("caption", "").replace("\n", "\n> "))
+              print("\n**해시태그** " + " ".join("#" + t.lstrip("#") for t in p.get("hashtags", [])))
+              srcs = p.get("sources", [])
+              if srcs:
+                  print("\n**출처**")
+                  for s in srcs:
+                      print(f"- [{s['name']}]({s['url']})")
+              print()
+          print("\n🤖 Generated with [Claude Code](https://claude.com/claude-code)")
+          PY
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --body-file pr_body.md
+          else
+            gh pr create --base main --head "$BRANCH" --title "[승인 대기] $day 와다다 이슈" --body-file pr_body.md
+          fi

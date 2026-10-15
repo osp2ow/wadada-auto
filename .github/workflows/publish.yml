@@ -1,0 +1,60 @@
+# 승인된(main에 머지된) 카드를 정해진 시간에 인스타에 게시
+# 한 번 실행에 최대 1개 게시. 늦게 승인된 것은 다음 실행 때 이어서 올라감.
+name: 인스타 게시
+
+on:
+  schedule:
+    # UTC 기준 04~09시 5분 = 한국 13:05 ~ 18:05 (매시간)
+    - cron: "5 4-9 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "실행 방식"
+        type: choice
+        options: ["시간 규칙대로", "지금 바로 다음 것", "미리보기만 (dry-run)"]
+        default: "시간 규칙대로"
+      path:
+        description: "특정 게시물 경로 (예: posts/2026-10-15/1) — 비우면 자동 선택"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 게시
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          TARGET: ${{ inputs.path }}
+        run: |
+          export IMAGE_REF=$(git rev-parse HEAD)
+          args=""
+          [ "$MODE" = "지금 바로 다음 것" ] && args="--now"
+          [ "$MODE" = "미리보기만 (dry-run)" ] && args="--dry-run"
+          python scripts/publish.py $args $TARGET
+
+      - name: 게시 기록 저장
+        run: |
+          git config user.name "wadada-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add posts
+          if ! git diff --cached --quiet; then
+            git commit -m "게시 기록"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
