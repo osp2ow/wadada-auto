@@ -6,7 +6,7 @@
 
 | 시간 (한국) | 무엇이 | 하는 일 |
 |---|---|---|
-| 오전 11시경 | Claude Code 루틴 | 이슈 3개 골라 원고 작성 → `claude/posts-날짜` 브랜치 푸시 |
+| 오전 11시경 | AI 자동화 | 이슈 3개 골라 원고 작성 → `claude/posts-날짜` 브랜치 푸시 |
 | 바로 이어서 | GitHub Actions (초안 미리보기) | 카드 이미지 렌더링 → **[승인 대기] PR** 생성 |
 | 1시 전까지 | 나 | GitHub 앱에서 PR 보고 **Merge = 승인** |
 | 13:05 / 14:05 / 15:05 | GitHub Actions (인스타 게시) | 승인된 카드 1개씩 게시 |
@@ -25,7 +25,7 @@ template/card.html                카드 디자인
 scripts/render.py                 카드 렌더링
 scripts/publish.py                인스타 게시
 scripts/validate.py               원고 형식 검사
-CLAUDE.md                         루틴이 따르는 작업 지침 (주제, 금지 이슈, 말투)
+AGENTS.md                         AI가 따르는 작업 지침 (주제, 금지 이슈, 말투)
 ```
 
 ## 필요한 Secret
